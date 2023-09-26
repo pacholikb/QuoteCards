@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import json
 import time
-import openai
 
 # Set default mode to wide
 st.set_page_config(layout="wide")
