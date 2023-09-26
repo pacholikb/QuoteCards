@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 import json
@@ -6,8 +7,7 @@ import sqlite3
 
 # Set default mode to wide
 st.set_page_config(page_title="Quote Card Generator",layout="wide",initial_sidebar_state="expanded")
-# Create a sidebar
-st.sidebar.title("Navigation")
+
 # Connect to SQLite database
 conn = sqlite3.connect('settings.db')
 c = conn.cursor()
