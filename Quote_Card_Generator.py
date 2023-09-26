@@ -2,38 +2,55 @@ import streamlit as st
 import requests
 import json
 import time
+import sqlite3
 
 # Set default mode to wide
 st.set_page_config(page_title="Quote Card Generator",layout="wide")
 
-# Hardcoded clients data
-clients = {
-    "CEO.works": {
-        "API_KEY": 'bb_pr_106b496ae486ce241a32e60cf1782b',
-        "TEMPLATE_IDS": ['4KnlWBbK1wPW5OQGgm', 'wXmzGBDa10jxDLN7gj', '8BK3vWZJ2Jr6ZJzk1a'],
-        "authors": {
-            "Hein Knaapen": {"name": "Hein Knaapen", "title": "Partner, CEO.works Europe", "image": "https://www.ceoworks.com/hs-fs/hubfs/20230703_Hein_Color-1.png?width=290&name=20230703_Hein_Color-1.png"},
-            "Sandy Ogg": {"name": "Sandy Ogg", "title": "Founder of CEO.works", "image": "https://www.ceoworks.com/hs-fs/hubfs/sandy%20RTC%2029%20copy.jpg?width=290&name=sandy%20RTC%2029%20copy.jpg"},
-        }
-    },
-    "CLS": {
-        "API_KEY": 'cls_api_key',  # Replace with actual API key
-        "TEMPLATE_IDS": ['cls_template_id1', 'cls_template_id2', 'cls_template_id3'],  # Replace with actual template IDs
-        "authors": {
-            "Author1": {"name": "Author1", "title": "Title1", "image": "ImageURL1"},  # Replace with actual author data
-            "Author2": {"name": "Author2", "title": "Title2", "image": "ImageURL2"},  # Replace with actual author data
-        }
-    },
-    "Baseball.works": {
-        "API_KEY": 'baseball_works_api_key',  # Replace with actual API key
-        "TEMPLATE_IDS": ['baseball_works_template_id1', 'baseball_works_template_id2', 'baseball_works_template_id3'],  # Replace with actual template IDs
-        "authors": {
-            "Author1": {"name": "Author1", "title": "Title1", "image": "ImageURL1"},  # Replace with actual author data
-            "Author2": {"name": "Author2", "title": "Title2", "image": "ImageURL2"},  # Replace with actual author data
-        }
-    },
-    # Add more clients as needed
-}
+# Connect to SQLite database
+conn = sqlite3.connect('settings.db')
+c = conn.cursor()
+
+# Create clients table
+c.execute('''
+    CREATE TABLE IF NOT EXISTS clients (
+        id INTEGER PRIMARY_KEY,
+        name TEXT,
+        api_key TEXT
+        template_ids TEXT
+    )
+''')
+
+# Create authors table
+c.execute('''
+    CREATE TABLE IF NOT EXISTS authors (
+        id INTEGER PRIMARY KEY,
+        client_id INTEGER,
+        name TEXT,
+        title TEXT,
+        image TEXT,
+        FOREIGN KEY(client_id) REFERENCES clients(id)
+    )
+''')
+
+# Commit changes
+conn.commit()
+
+# Fetch clients from the database
+c.execute("SELECT * FROM clients")
+client_rows = c.fetchall()
+
+# Fetch authors from the database
+c.execute("SELECT * FROM authors")
+author_rows = c.fetchall()
+
+# Convert author data to dictionary
+authors = {row[1]: {"name": row[2], "title": row[3], "image": row[4]} for row in author_rows}
+
+# Convert client data to dictionary
+clients = {row[1]: {"API_KEY": row[2], "TEMPLATE_IDS": row[3].split(','), "authors": authors} for row in client_rows}
+# Close connection
+conn.close()
 
 # Streamlit app
 st.title("⚡️ Quote Card Generator")
@@ -49,7 +66,7 @@ with st.expander("Enter Your Quote Card Settings", expanded=True):
     authors = clients[selected_client]["authors"]
 
     # User selects an author
-    selected_author = st.selectbox("Select an author", list(authors.keys()))
+    selected_author = st.selectbox("Select an author", [authors[key]["name"] for key in authors.keys()])
 
     # User enters a quote
     quote = st.text_input("Enter Quote Text (max 70 characters)", max_chars=70)
@@ -114,4 +131,3 @@ with st.expander("Enter Your Quote Card Settings", expanded=True):
                         st.image(response.json()["image_url"])
                         st.markdown(f'[Download]({response.json()["image_url"]})')
                     break
-
