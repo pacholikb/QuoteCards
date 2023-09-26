@@ -5,7 +5,7 @@ import time
 import sqlite3
 
 # Set default mode to wide
-st.set_page_config(page_title="Quote Card Generator",layout="wide")
+st.set_page_config(page_title="Quote Card Generator",layout="wide",initial_sidebar_state="expanded")
 
 # Connect to SQLite database
 conn = sqlite3.connect('settings.db')
